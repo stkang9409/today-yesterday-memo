@@ -1,0 +1,36 @@
+name: Release macOS App
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and Package DMG & ZIP
+        run: |
+          chmod +x build.sh package.sh install.sh
+          ./package.sh
+
+      - name: Create or Update Release Assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" \
+              dist/오늘어제메모.dmg \
+              dist/오늘어제메모-macOS.zip \
+              --clobber
+          else
+            gh release create "${GITHUB_REF_NAME}" \
+              dist/오늘어제메모.dmg \
+              dist/오늘어제메모-macOS.zip \
+              --generate-notes
+          fi
